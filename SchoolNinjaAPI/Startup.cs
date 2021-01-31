@@ -44,6 +44,16 @@ namespace SchoolNinjaAPI
                 };
             });
 
+            services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(builder =>
+                {
+                    builder.AllowAnyOrigin();
+                    builder.AllowAnyHeader();
+                    builder.AllowAnyMethod();
+                });
+            });
+
             services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddScoped<IUserProvider, UserProvider>();
         }
@@ -57,6 +67,7 @@ namespace SchoolNinjaAPI
             }
 
             app.UseHttpsRedirection();
+            app.UseCors();
 
             app.UseAuthentication();
 
