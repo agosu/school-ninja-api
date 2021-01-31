@@ -1,10 +1,14 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SchoolNinjaAPI.Data;
+using SchoolNinjaAPI.DTO;
 using SchoolNinjaAPI.Models;
+using SchoolNinjaAPI.Utils;
 
 namespace SchoolNinjaAPI.Controllers
 {
@@ -13,20 +17,27 @@ namespace SchoolNinjaAPI.Controllers
     public class UsersController : ControllerBase
     {
         private readonly SchoolNinjaAPIContext _context;
+        private readonly IUserProvider _userProvider;
 
-        public UsersController(SchoolNinjaAPIContext context)
+        public UsersController(SchoolNinjaAPIContext context, IUserProvider userProvider)
         {
             _context = context;
+            _userProvider = userProvider;
         }
 
-        // GET: api/Users
+        [HttpGet("test")]
+        [Authorize]
+        public IActionResult Test()
+        {
+            return Ok(_userProvider.GetUser());
+        }
+
         [HttpGet]
         public async Task<ActionResult<IEnumerable<User>>> GetUser()
         {
             return await _context.User.ToListAsync();
         }
 
-        // GET: api/Users/5
         [HttpGet("{id}")]
         public async Task<ActionResult<User>> GetUser(int id)
         {
@@ -40,9 +51,6 @@ namespace SchoolNinjaAPI.Controllers
             return user;
         }
 
-        // PUT: api/Users/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for
-        // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPut("{id}")]
         public async Task<IActionResult> PutUser(int id, User user)
         {
@@ -72,19 +80,6 @@ namespace SchoolNinjaAPI.Controllers
             return NoContent();
         }
 
-        // POST: api/Users
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for
-        // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
-        [HttpPost]
-        public async Task<ActionResult<User>> PostUser(User user)
-        {
-            _context.User.Add(user);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetUser", new { id = user.Id }, user);
-        }
-
-        // DELETE: api/Users/5
         [HttpDelete("{id}")]
         public async Task<ActionResult<User>> DeleteUser(int id)
         {
@@ -98,6 +93,33 @@ namespace SchoolNinjaAPI.Controllers
             await _context.SaveChangesAsync();
 
             return user;
+        }
+
+        [HttpPost("register")]
+        public ActionResult Register(UserRequestDTO newUserRequest)
+        {
+            User user = (from u in _context.User where u.Email == newUserRequest.Email select u).FirstOrDefault();
+            if (user == null)
+            {
+                var salt = SecretUtils.GenerateSalt();
+                var password = SecretUtils.EncodePassword(newUserRequest.Password, salt);
+                User newUser = new User();
+                newUser.Firstname = newUserRequest.Firstname;
+                newUser.Lastname = newUserRequest.Lastname;
+                newUser.Email = newUserRequest.Email;
+                newUser.Type = newUserRequest.Type;
+                if (newUser.Type.Equals("student"))
+                {
+                    newUser.Grade = newUserRequest.Grade;
+                }
+                newUser.Password = password;
+                newUser.Salt = salt;
+                newUser.CreatedAt = DateTime.Now;
+                _context.User.Add(newUser);
+                _context.SaveChanges();
+                return Ok();
+            }
+            return Conflict();
         }
 
         private bool UserExists(int id)

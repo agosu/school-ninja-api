@@ -1,22 +1,19 @@
 ﻿using SchoolNinjaAPI.Utils;
-using System;
 using System.ComponentModel.DataAnnotations;
 using System.Configuration;
 
-namespace SchoolNinjaAPI.Models
+namespace SchoolNinjaAPI.DTO
 {
-    public class User
+    public class UserRequestDTO
     {
-        public int Id { get; set; }
-
         [Required]
         [MaxLength(20)]
         [MinLength(2)]
         public string Firstname { get; set; }
 
-        [Required]
         [MaxLength(20)]
         [MinLength(2)]
+        [Required]
         public string Lastname { get; set; }
 
         [Required]
@@ -28,15 +25,9 @@ namespace SchoolNinjaAPI.Models
         public string Type { get; set; }
 
         [IntegerValidator(MinValue = 1, MaxValue = 12)]
-        public int? Grade { get; set; }
+        public int Grade { get; set; }
 
         [Required]
         public string Password { get; set; }
-
-        [Required]
-        public string Salt { get; set; }
-
-        [Required]
-        public DateTime CreatedAt { get; set; }
     }
 }
